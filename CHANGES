@@ -1,4 +1,17 @@
 Gold changes since beta release 2.0.b1.0:
+
+Release 2.0.0.9 (unofficial)
+
+  - Makefile defensively creates directories since git does not preserve empty directories.
+  - Remove "echo -e" bashism and "ed" dependence from Makefile.
+  - Move cgi-bin/*.cgi to src/cgi-bin --- Makefile places edited versions in cgi-bin.
+
+Release 2.0.0.8 (unofficial)
+
+  - Addition of sssrmap tree.
+  - Makefile builds manpages.
+  - License and documentation edits.
+
 Release 2.0.0.7
 
   Fix split charges when a job overruns the time allocation

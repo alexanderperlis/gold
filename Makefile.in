@@ -126,23 +126,27 @@ lib/gold.war:
 	fi
 
 bin/goldj: src/goldj.c
-	 cc -g $< -o $@
+	cc -g $< -o $@
 	chmod 4755 $@
 
 $(BINS): Makefile
+	-@mkdir -p bin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 4755 $@
 
 $(CGI_FILES): Makefile
-	echo -e "1s%#!.*%#! $(PERL) -wT%\n1,\$$s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%\nwq" | ed $@
+	basename=`echo $@ | sed -e 's#^.*/##'`; \
+	sed '1s%#!.*%#! $(PERL) -wT%' src/cgi-bin/$${basename} | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 
 $(WRAPPERS): Makefile
+	-@mkdir -p bin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 755 $@
 
 $(SBINS): Makefile
+	-@mkdir -p sbin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 755 $@
@@ -154,6 +158,7 @@ html: $(SGML)
 	cd doc && db2html userguide.sgml
 
 $(MANS): $(BINS)
+	-@mkdir -p man1
 	pod2man --section=1 $< | gzip -c > $@ 
 
 man: $(MANS)
@@ -332,7 +337,8 @@ commit: realclean
 	./configure -q
 
 clean:
-	-$(RM) classes/*.class classes/gold/*.class bin/g* sbin/goldd lib/gold.jar gui/web/WEB-INF/classes/gold/web/client/*.class lib/gold.war userguide.pdf man/*
+	-$(RM) classes/*.class classes/gold/*.class $(BINS) $(WRAPPERS) $(CGI_FILES) $(SBINS) $(MANS) lib/gold.jar gui/web/WEB-INF/classes/gold/web/client/*.class lib/gold.war userguide.pdf
+	-rmdir bin sbin man1
 	-$(RM) -r doc/userguide/* doc/userguide.junk
 
 distclean: clean
