@@ -7,6 +7,14 @@ Introduction:
 Gold uses the standard configure, make and make install steps that we all know and love. However, there are a number of preparation, prerequisite, post-install configuration, and post-startup customization steps that need to be performed.
 This document provides general installation guidance and provides a number of sample steps referenced to a particular installation on a Linux platform using the bash shell. These steps indicate the userid in brackets performing the step. The exact commands to be performed and the user that issues them will vary based on the platform, shell, installation preferences etc.
 
+Prerequisites:
+==============
+
+- Debian / Ubuntu:
+  - apt install cpanminus libdbi-perl libdigest-hmac-perl libdate-manip-perl libparams-validate-perl liblog-log4perl-perl liblog-dispatch-filerotate-perl libxml-namespacesupport-perl libxml-sax-perl libxml-libxml-perl libcrypt-des-perl libcrypt-des-ede3-perl libcrypt-cbc-perl libdbd-pg-perl libcgi-session-perl
+  - cpanm Data::Properties
+  - apt install docbook-utils  # optional, needed for `make doc`
+
 For the impatient:
 ==================
 
@@ -268,7 +276,7 @@ This will install the following Perl modules as necessary. By default, these wil
     Digest
     Digest::HMAC
     Digest::MD5
-    Digest::SHA1
+    Digest::SHA
     Error
     Log::Dispatch
     Log::Dispatch::FileRotate

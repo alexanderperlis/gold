@@ -267,7 +267,7 @@ This will install the following Perl modules as necessary. By default, these wil
     Digest
     Digest::HMAC
     Digest::MD5
-    Digest::SHA1
+    Digest::SHA
     Error
     Log::Dispatch
     Log::Dispatch::FileRotate

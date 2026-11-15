@@ -186,13 +186,13 @@ The following wildcards are supported:
 
 =over 4
 
-=item *
-
-matches any number of characters
-
 =item ?
 
 matches a single character
+
+=item *
+
+matches any number of characters
 
 =back
 

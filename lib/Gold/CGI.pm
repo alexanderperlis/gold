@@ -136,7 +136,7 @@ BEGIN {
   close CONFIG;
 
   # Configure Logging
-  Log::Log4perl::Logger::create_custom_level("TRACE", "DEBUG");
+  Log::Log4perl::Logger::create_custom_level("TRACE", "DEBUG") unless Log::Log4perl::Logger->can('is_trace');
   Log::Log4perl->init("$configFile");
   $log = get_logger("Gold");
   $log->info("$0 (PID $$) Started *******************************************");

@@ -134,7 +134,7 @@ use vars qw($log);
 use Compress::Zlib;
 use Crypt::CBC;
 use Data::Properties;
-use Digest::SHA1;
+use Digest::SHA;
 use Digest::HMAC;
 use Digest::MD5 qw(md5_hex);
 use Error qw(:try);
@@ -399,7 +399,7 @@ sub sign
 
   # Step 3) Perform the digest
 
-  my $ctx = Digest::SHA1->new;
+  my $ctx = Digest::SHA->new;
   $ctx->add($body);
   my $digest = $ctx->digest;
   #my $digestString = $ctx->b64digest;
@@ -411,7 +411,7 @@ sub sign
 
   # Step 4) Generate the MAC
 
-  my $hmac = Digest::HMAC->new($tokenValue, "Digest::SHA1");
+  my $hmac = Digest::HMAC->new($tokenValue, "Digest::SHA");
   $hmac->add($digest);
   my $mac = $hmac->digest;
   chomp(my $macString = encode_base64($mac, ""));
@@ -567,7 +567,7 @@ sub authenticate
 
   # Step 4) Perform the digest and check it
 
-  my $ctx = Digest::SHA1->new;
+  my $ctx = Digest::SHA->new;
   $ctx->add($body);
   my $digest = $ctx->digest;
   #my $digestString = $ctx->b64digest;
@@ -583,7 +583,7 @@ sub authenticate
 
   # Step 5) Generate the MAC and check it
 
-  my $hmac = Digest::HMAC->new($tokenValue, "Digest::SHA1");
+  my $hmac = Digest::HMAC->new($tokenValue, "Digest::SHA");
   $hmac->add($digest);
   my $mac = $hmac->digest;
   chomp(my $macString = encode_base64($mac, ""));
@@ -720,7 +720,7 @@ sub encrypt
   # Step 4) Encrypt the session key with the security token
 
   # Compute the CMS key checksum and call this CKS
-  my $md = Digest::SHA1->new;
+  my $md = Digest::SHA->new;
   $md->add($sessionKey);
   my $cks = $md->digest;
 
@@ -943,7 +943,7 @@ sub decrypt
   my $cks = substr($wkcks, 24);
   
   # Calculate a CMS key checksum over the WK and compare with extracted CKS
-  my $md = Digest::SHA1->new;
+  my $md = Digest::SHA->new;
   $md->add($wk);
   my $ccks = $md->digest;
   if (substr($ccks, 0, 8) ne $cks)

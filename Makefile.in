@@ -95,7 +95,7 @@ CLASSPATH   = lib/xerces.jar:lib/jdom.jar:lib/log4j-1.2.8.jar
 GUICLASSPATH = gui/web/WEB-INF/lib/gold.jar:gui/web/WEB-INF/lib/jdom.jar:$(CATALINA_HOME)/common/lib/servlet.jar:$(CLASSPATH)
 DOCS        = userguide
 SGML        = doc/accounts.sgml doc/allocations.sgml doc/chargerates.sgml doc/configuration.sgml doc/copyright.sgml doc/customize.sgml doc/gettingadvanced.sgml doc/gettingstarted.sgml doc/goldsh.sgml doc/installation.sgml doc/integration.sgml doc/jobs.sgml doc/legalnotice.sgml doc/machines.sgml doc/overview.sgml doc/passwords.sgml doc/projects.sgml doc/quotations.sgml doc/reservations.sgml doc/roles.sgml doc/transactions.sgml doc/userguide.sgml doc/users.sgml
-PERL_MODULES = DBI-1.42 Data-Properties-0.02 Digest-1.05 Digest-SHA1-2.07 Digest-HMAC-1.01 Error-0.15 DateManip-5.42a Params-Validate-0.74 Time-HiRes-1.65 Log-Log4perl-0.42 Module-Build-0.25 Log-Dispatch-2.10 Log-Dispatch-FileRotate-1.11 MIME-Base64-3.01@READLINE_PACKAGE@ XML-NamespaceSupport-1.08 XML-SAX-0.12 XML-LibXML-Common-0.13 XML-LibXML-1.58_1 Digest-MD5-2.33 Crypt-DES-2.03 Crypt-DES_EDE3-0.01 Crypt-CBC-2.12 Compress-Zlib-1.33@DBD_PACKAGE@ CGI-Session-3.95 CGI.pm-3.10
+PERL_MODULES = DBI-1.42 Data-Properties-0.02 Digest-1.05 Digest-SHA-5.20 Digest-HMAC-1.01 Error-0.15 DateManip-5.42a Params-Validate-0.74 Time-HiRes-1.65 Log-Log4perl-0.42 Module-Build-0.25 Log-Dispatch-2.10 Log-Dispatch-FileRotate-1.11 MIME-Base64-3.01@READLINE_PACKAGE@ XML-NamespaceSupport-1.08 XML-SAX-0.12 XML-LibXML-Common-0.13 XML-LibXML-1.58_1 Digest-MD5-2.33 Crypt-DES-2.03 Crypt-DES_EDE3-0.01 Crypt-CBC-2.12 Compress-Zlib-1.33@DBD_PACKAGE@ CGI-Session-3.95 CGI.pm-3.10
 
 .PHONY: all java gui doc html man pdf test install install-java install-gui auth_key unistall dist reconfig commit clean distclean realclean
 
@@ -130,7 +130,7 @@ bin/goldj: src/goldj.c
 	chmod 4755 $@
 
 $(BINS): Makefile
-	-@mkdir -p bin
+	@mkdir -p bin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 4755 $@
@@ -140,13 +140,13 @@ $(CGI_FILES): Makefile
 	sed '1s%#!.*%#! $(PERL) -wT%' src/cgi-bin/$${basename} | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 
 $(WRAPPERS): Makefile
-	-@mkdir -p bin
+	@mkdir -p bin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 755 $@
 
 $(SBINS): Makefile
-	-@mkdir -p sbin
+	@mkdir -p sbin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 755 $@
@@ -157,8 +157,8 @@ html: $(SGML)
 	-@rm -rf doc/userguide.junk
 	cd doc && db2html userguide.sgml
 
-$(MANS): $(BINS)
-	-@mkdir -p man1
+$(MANS): man1/%.1.gz: bin/%
+	@mkdir -p man1
 	pod2man --section=1 $< | gzip -c > $@ 
 
 man: $(MANS)
@@ -199,8 +199,12 @@ install:
 	cp $(MANS) $(mandir)/man1 && \
 		(cd $(mandir)/man1/.. && chown $(USER) $(MANS))
 	for file in $(DOCS); do \
-		[ ! -r doc/$${file}.pdf ] || cp doc/$${file}.pdf $(docdir) && chown $(USER) $(docdir)/$${file}.pdf; \
-		[ ! -d doc/$$file ] || cp -r doc/$$file $(docdir) && chown -R $(USER) $(docdir)/$$file; \
+		if [ -r doc/$${file}.pdf ]; then \
+			cp doc/$${file}.pdf $(docdir) && chown $(USER) $(docdir)/$${file}.pdf || exit 1; \
+		fi \
+		if [ -d doc/$$file ]; then \
+			cp -r doc/$$file $(docdir) && chown -R $(USER) $(docdir)/$$file || exit 1; \
+		fi \
 	done
 	[ -s $(sysconfdir)/gold.conf ] || \
 		(cp etc/gold.conf.dist $(sysconfdir)/gold.conf && \
@@ -233,22 +237,26 @@ install-java:
 install-java-gui: install-java
 	if [ -d "$(CATALINA_HOME)" ]; then \
 		for file in $(WARS); do \
-	    basename=`echo $$file | sed -e 's#^.*/##'`; \
+		basename=`echo $$file | sed -e 's#^.*/##'`; \
 			cp $$file $(CATALINA_HOME)/webapps && \
 			chown $(USER) $(CATALINA_HOME)/webapps/$$basename; \
 		done; \
 	else \
 		for file in $(WARS); do \
-	    basename=`echo $$file | sed -e 's#^.*/##'`; \
+		basename=`echo $$file | sed -e 's#^.*/##'`; \
 			cp $$file $(libdir) && \
 			chown $(USER) $(libdir)/$$basename; \
 		done; \
 	fi
 
 deps:
-	PERL5LIB=$(libdir)/perl5:$(libdir)/perl5/site_perl; export PERL5LIB; \
-	for module in $(PERL_MODULES); do \
-		(LANG=en_US; PATH=/usr/local/bin:$${PATH}; export LANG PATH && cd src && $(PERL) check_module.pl $${module} && gzip -cd $${module}.tar.gz | tar xvf - && cd $${module} && (echo; echo; echo) | $(PERL) Makefile.PL@MAKEPL_ARG@ && make && make install || :); \
+	LC_ALL=C; PATH=/usr/local/bin:$${PATH}; PERL5LIB=$(libdir)/perl5:$(libdir)/perl5/site_perl; \
+	export LC_ALL PATH PERL5LIB; \
+	cd src && for module in $(PERL_MODULES); do if $(PERL) check_module.pl $${module} ; then \
+		[ -e $${module}.tar.gz ] || { echo "Dependency error: $${module}.tar.gz not found." >&2; exit 1; }; \
+		echo "Building $${module}..."; \
+		( gzip -cd $${module}.tar.gz | tar xvf - && cd $${module} && PERL_MM_USE_DEFAULT=1 $(PERL) Makefile.PL@MAKEPL_ARG@ && make && make install ) || exit 1; \
+		fi; \
 	done
 
 # Install authorization key
@@ -278,7 +286,7 @@ uninstall:
 		basename=`echo $$file | sed -e 's#^.*/##'`; \
 		$(RM) $(mandir)/man1/$$basename; \
 	done
-	for file in $(JAVABINS) $(BINS); do \
+	for file in $(JAVABINS) $(BINS) $(WRAPPERS); do \
 		basename=`echo $$file | sed -e 's#^.*/##'`; \
 		$(RM) $(bindir)/$$basename; \
 	done

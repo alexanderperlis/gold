@@ -92,7 +92,7 @@ use vars qw($log);
 #use Compress::Zlib;
 #use Crypt::CBC;
 use Data::Properties;
-#use Digest::SHA1;
+#use Digest::SHA;
 #use Digest::HMAC;
 use Digest::MD5 qw(md5_hex);
 use Error qw(:try);
