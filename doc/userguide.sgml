@@ -27,7 +27,7 @@
 <!ENTITY customize SYSTEM "customize.sgml">
 <!ENTITY integration SYSTEM "integration.sgml">
 <!ENTITY configuration SYSTEM "configuration.sgml">
-<!ENTITY appendix_a SYSTEM "appendix_a.sgml">
+<!ENTITY appendix-a SYSTEM "appendix_a.sgml">
 ]>
 
 <book>
@@ -85,7 +85,7 @@ This is the general release of the User's Guide. Other information may be found 
   &customize;
   &integration;
   &configuration;
-  &appendix_a;
+  &appendix-a;
 
 <!-- End of Book -->
 

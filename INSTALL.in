@@ -5,8 +5,8 @@ Introduction:
 =============
 
 Gold uses the standard configure, make and make install steps that we all know and love. However, there are a number of preparation, prerequisite, post-install configuration, and post-startup customization steps that need to be performed.
-This document provides general installation guidance and provides a number of sample steps referenced to a particular installation on a Linux platform using the bash shell. These steps indicate the userid in brackets performing the step. The exact commands to be performed and the user that issues them will vary based on the platform, shell, installation preferences etc. 
-  
+This document provides general installation guidance and provides a number of sample steps referenced to a particular installation on a Linux platform using the bash shell. These steps indicate the userid in brackets performing the step. The exact commands to be performed and the user that issues them will vary based on the platform, shell, installation preferences etc.
+
 For the impatient:
 ==================
 
@@ -15,13 +15,14 @@ For the impatient:
 2.  Unpack the gold tarball and cd into it
 3.  ./configure   # use --help to list options
 4.  make
-5.  make deps     # as root
-6.  make install  # as root
-7.  make auth_key # as root
-8.  Initialize the database, making sure it allows internet domain sockets 
-9.  Create a database called gold and make gold a database administrator
-10. psql gold < bank.sql        # Populates gold database
-11. /usr/local/gold/sbin/goldd  # Starts gold
+5.  make doc      # optional (requires db2html and db2pdf from docbook-utils)
+6.  make deps     # as root
+7.  make install  # as root
+8.  make auth_key # as root
+9.  Initialize the database, making sure it allows internet domain sockets 
+10. Create a database called gold and make gold a database administrator
+11. psql gold < bank.sql        # Populates gold database
+12. /usr/local/gold/sbin/goldd  # Starts gold
 
 Install Prerequisites:
 ======================

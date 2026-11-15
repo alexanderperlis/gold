@@ -199,8 +199,8 @@ install:
 	cp $(MANS) $(mandir)/man1 && \
 		(cd $(mandir)/man1/.. && chown $(USER) $(MANS))
 	for file in $(DOCS); do \
-		cp doc/$${file}.pdf $(docdir) && chown $(USER) $(docdir)/$${file}.pdf; \
-		cp -r doc/$$file $(docdir) && chown -R $(USER) $(docdir)/$$file; \
+		[ ! -r doc/$${file}.pdf ] || cp doc/$${file}.pdf $(docdir) && chown $(USER) $(docdir)/$${file}.pdf; \
+		[ ! -d doc/$$file ] || cp -r doc/$$file $(docdir) && chown -R $(USER) $(docdir)/$$file; \
 	done
 	[ -s $(sysconfdir)/gold.conf ] || \
 		(cp etc/gold.conf.dist $(sysconfdir)/gold.conf && \
@@ -339,7 +339,8 @@ commit: realclean
 clean:
 	-$(RM) classes/*.class classes/gold/*.class $(BINS) $(WRAPPERS) $(CGI_FILES) $(SBINS) $(MANS) lib/gold.jar gui/web/WEB-INF/classes/gold/web/client/*.class lib/gold.war userguide.pdf
 	-rmdir bin sbin man1
-	-$(RM) -r doc/userguide/* doc/userguide.junk
+	-$(RM) -r doc/userguide/* doc/userguide.pdf doc/userguide.junk
+	-rmdir doc/userguide
 
 distclean: clean
 	-$(RM) Makefile config.status config.log config.cache *.tar.gz etc/gold.conf.dist etc/goldd.conf.dist etc/goldj.conf.dist etc/goldg.conf.dist etc/gold.spec etc/gold.d etc/gold.sh etc/gold.csh create.sql bank.gold src/gold/Gold.java src/goldj.c lib/Gold/Global.pm lib/Gold.pm src/gold_init.pl src/goldsh.pl src/goldd.pl
