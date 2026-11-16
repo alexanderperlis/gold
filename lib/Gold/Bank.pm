@@ -4743,7 +4743,7 @@ sub quote
 	    }
 	  }
 	
-	  $itemizedCharges = "( " . join(' + ', @resourceCharges), " ) * " . join(' * ', @multiplierCharges) . " = $quote";
+	  $itemizedCharges = "( " . join(' + ', @resourceCharges) . " ) * " . join(' * ', @multiplierCharges) . " = $quote";
   }
 
   # If Charge is not included in job properties,
@@ -6120,7 +6120,7 @@ sub reserve
 	    }
 	  }
 	
-	  $itemizedCharges = "( " . join(' + ', @resourceCharges), " ) * " . join(' * ', @multiplierCharges) . " = $reserve";
+	  $itemizedCharges = "( " . join(' + ', @resourceCharges) . " ) * " . join(' * ', @multiplierCharges) . " = $reserve";
   }
 
   # If Charge is not included in job properties,

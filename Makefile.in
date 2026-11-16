@@ -298,7 +298,7 @@ uninstall:
 		basename=`echo $$file | sed -e 's#^.*/##'`; \
 		$(RM) $(mandir)/man1/$$basename; \
 	done
-	for file in $(JAVABINS) $(BINS) $(BINS:bin/%=bin/%.pl) $(SUID_DISPATCH) $(WRAPPERS); do \
+	for file in $(JAVABINS) $(BINS) $(BINS_PL) $(SUID_DISPATCH) $(WRAPPERS); do \
 		basename=`echo $$file | sed -e 's#^.*/##'`; \
 		$(RM) $(bindir)/$$basename; \
 	done
@@ -357,13 +357,13 @@ commit: realclean
 	./configure -q
 
 clean:
-	-$(RM) classes/*.class classes/gold/*.class $(BINS) $(WRAPPERS) $(CGI_FILES) $(SBINS) $(MANS) lib/gold.jar gui/web/WEB-INF/classes/gold/web/client/*.class lib/gold.war userguide.pdf src/gold_dispatch_allowed.h
+	-$(RM) classes/*.class classes/gold/*.class $(BINS_PL) $(SUID_DISPATCH) $(WRAPPERS) $(CGI_FILES) $(SBINS) $(MANS) lib/gold.jar gui/web/WEB-INF/classes/gold/web/client/*.class lib/gold.war userguide.pdf src/gold_dispatch_allowed.h
 	-rmdir bin sbin man1
 	-$(RM) -r doc/userguide/* doc/userguide.pdf doc/userguide.junk
 	-rmdir doc/userguide
 
 distclean: clean
-	-$(RM) Makefile config.status config.log config.cache *.tar.gz etc/gold.conf.dist etc/goldd.conf.dist etc/goldj.conf.dist etc/goldg.conf.dist etc/gold.spec etc/gold.d etc/gold.sh etc/gold.csh create.sql bank.gold src/gold/Gold.java src/goldj.c lib/Gold/Global.pm lib/Gold.pm src/gold_init.pl src/goldsh.pl src/goldd.pl src/gold_dispatch.cpp
+	-$(RM) Makefile config.status config.log config.cache *.tar.gz etc/gold.conf.dist etc/goldd.conf.dist etc/goldj.conf.dist etc/goldg.conf.dist etc/gold.spec etc/gold.d etc/gold.sh etc/gold.csh create.sql bank.gold bank.sql base.sql src/gold/Gold.java src/goldj.c lib/Gold/Global.pm lib/Gold.pm src/gold_init.pl src/goldsh.pl src/goldd.pl src/gold_dispatch.cpp
 
 realclean: distclean
 	-$(RM) configure README INSTALL

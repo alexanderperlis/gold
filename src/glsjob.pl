@@ -209,7 +209,7 @@ The following wildcards are supported:
 
 matches a single character
 
-=item *
+=item E<42>
 
 matches any number of characters
 

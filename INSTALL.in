@@ -7,14 +7,6 @@ Introduction:
 Gold uses the standard configure, make and make install steps that we all know and love. However, there are a number of preparation, prerequisite, post-install configuration, and post-startup customization steps that need to be performed.
 This document provides general installation guidance and provides a number of sample steps referenced to a particular installation on a Linux platform using the bash shell. These steps indicate the userid in brackets performing the step. The exact commands to be performed and the user that issues them will vary based on the platform, shell, installation preferences etc.
 
-Prerequisites:
-==============
-
-- Debian / Ubuntu:
-  - apt install build-essential cpanminus libdbi-perl libdigest-hmac-perl libdate-manip-perl libparams-validate-perl liblog-log4perl-perl liblog-dispatch-filerotate-perl libxml-namespacesupport-perl libxml-sax-perl libxml-libxml-perl libcrypt-des-perl libcrypt-des-ede3-perl libcrypt-cbc-perl libdbd-pg-perl libcgi-session-perl
-  - cpanm Data::Properties
-  - apt install docbook-utils  # optional, needed for `make doc`
-
 For the impatient:
 ==================
 
@@ -31,6 +23,31 @@ For the impatient:
 10. Create a database called gold and make gold a database administrator
 11. psql gold < bank.sql        # Populates gold database
 12. /usr/local/gold/sbin/goldd  # Starts gold
+
+Prerequisites:
+==============
+
+- Debian / Ubuntu:
+  - apt install build-essential cpanminus libdbi-perl libdigest-hmac-perl libdate-manip-perl libparams-validate-perl liblog-log4perl-perl liblog-dispatch-filerotate-perl libxml-namespacesupport-perl libxml-sax-perl libxml-libxml-perl libcrypt-des-perl libcrypt-des-ede3-perl libcrypt-cbc-perl libdbd-pg-perl libcgi-session-perl
+  - apt install libdbd-pg-perl libdbd-mysql-perl libdbd-sqlite-perl  # Choose at least one of these.
+  - cpanm Data::Properties
+  - apt install docbook-utils  # optional, needed for `make doc`
+  - apt install readline  # optional, used by `goldsh`
+
+- RHEL / AlmaLinux / RockyLinux / CentOS / Fedora:
+  - dnf install dnf-plugins-core
+  - dnf config-manager --set-enabled crb  # if no `crb`, try `powertools` or `codeready-builder`
+  - dnf install epel-release
+  - dnf install make perl perl-App-cpanminus perl-LWP-Protocol-https gcc-c++
+  - dnf install perl-DBI perl-Digest-HMAC perl-Date-Manip perl-Params-Validate perl-Log-Log4perl perl-Log-Dispatch-FileRotate perl-XML-NamespaceSupport perl-XML-SAX perl-XML-LibXML perl-Crypt-DES perl-Crypt-DES_EDE3 perl-Crypt-CBC
+  - dnf install perl-DBD-Pg perl-DBD-MySQL perl-DBD-SQLite  # Choose at least one of these.
+  - cpanm Data::Properties CGI::Session
+  - dnf install docbook-utils docbook-utils-pdf  # optional, needed for `make doc`
+  - dns install readline  # optional, used by `goldsh`
+
+- Notes:
+  - Unless you are using SQLite, you will need to install or have access to a PostgreSQL or MySQL/MariaDB instance.
+  - To serve up the web interface, you will need to install a web server such as Apache.
 
 Install Prerequisites:
 ======================
