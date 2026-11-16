@@ -1,0 +1,44 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+#include <iterator>
+#include <unistd.h>
+
+constexpr const char* EXEC_PERL[] = {"@PERL@", "-wT"};
+constexpr const char PATH_PREFIX[] = "@prefix@/bin/";
+constexpr const char SCRIPT_SUFFIX[] = ".pl";
+
+constexpr const char* allowed[] = {
+// Following #include brings in sorted list of allowed strings.
+#include "gold_dispatch_allowed.h"
+};
+
+int main(int argc, char *argv[]) {
+        if (argc < 1 || argv[0] == nullptr) return 1;
+        const char* slash = std::strrchr(argv[0], '/');
+        const char* basename = (slash != nullptr)? (slash+1) : argv[0];
+
+        if (!std::binary_search(std::begin(allowed), std::end(allowed), basename, [](const char* a, const char* b) {return std::strcmp(a,b)<0; } )) {
+                std::cerr << "Error: Invalid executable target '" << basename << "'.\n";
+                return 1;
+        }
+        std::string real_script_path;
+        real_script_path.reserve( (sizeof(PATH_PREFIX)-1) + std::strlen(basename) + (sizeof(SCRIPT_SUFFIX)-1) );
+        real_script_path.append(PATH_PREFIX).append(basename).append(SCRIPT_SUFFIX);
+
+        std::vector<const char *> c_args; // This will be a C-style argv array.
+        // Reserve space for the EXEC_PERL parameters, a filename, the original argv[] parameters except argv[0], and a nullptr.
+        constexpr std::size_t exec_perl_count = sizeof(EXEC_PERL) / sizeof(EXEC_PERL[0]);
+        c_args.reserve(exec_perl_count + 1 + (argc - 1) + 1);
+        for (const char* s : EXEC_PERL) c_args.push_back(s);
+        c_args.push_back(real_script_path.c_str());
+        for (int i = 1; i < argc; ++i) c_args.push_back(argv[i]);
+        c_args.push_back(nullptr); // C-style argv array must end with a null entry.
+
+        execv(EXEC_PERL[0], const_cast<char* const*>(c_args.data()));
+
+        std::cerr << "Error: Execution of gold_dispatch failed.\n";
+        return 1;
+}

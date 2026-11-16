@@ -213,6 +213,7 @@ AC_CONFIG_FILES([
   src/gold/Gold.java
   src/goldj.c
   src/gold_init.pl
+  src/gold_dispatch.cpp
   lib/Gold.pm
   lib/Gold/Global.pm
   etc/gold.conf.dist
