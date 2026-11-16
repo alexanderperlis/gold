@@ -131,31 +131,31 @@ bin/goldj: src/goldj.c
 	cc -g $< -o $@
 	chmod 4755 $@
 
-$(BINS_PL): Makefile
+$(BINS_PL): bin/%: src/% Makefile
 	@mkdir -p bin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename} | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 644 $@
 
-src/gold_dispatch_allowed.h : Makefile
+src/gold_dispatch_allowed.h: Makefile
 	@echo "Generating $@..."
 	@printf '  "%s",\n' $(BINS:bin/%=%) | sort > $@
 
-$(SUID_DISPATCH) : src/gold_dispatch.cpp src/gold_dispatch_allowed.h Makefile
+$(SUID_DISPATCH): src/gold_dispatch.cpp src/gold_dispatch_allowed.h Makefile
 	$(CXX) $(CXXFLAGS) -std=c++11 -O2 $< -o $@
 	chmod 4755 $@
 
-$(CGI_FILES): Makefile
+$(CGI_FILES): cgi-bin/%: src/cgi-bin/% Makefile
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/cgi-bin/$${basename} | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 
-$(WRAPPERS): Makefile
+$(WRAPPERS): bin/%: src/%.pl Makefile
 	@mkdir -p bin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@
 	chmod 755 $@
 
-$(SBINS): Makefile
+$(SBINS): sbin/%: src/%.pl Makefile
 	@mkdir -p sbin
 	basename=`echo $@ | sed -e 's#^.*/##'`; \
 	sed '1s%#!.*%#! $(PERL) -wT%' src/$${basename}.pl | sed "s%use lib .*%use lib qw(@libdir@ @libdir@/perl5);%" >$@

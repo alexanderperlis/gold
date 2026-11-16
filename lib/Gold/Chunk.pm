@@ -526,13 +526,32 @@ sub authenticate
     # Decrypt password with auth key
     my $key = pack("a24", $AUTH_KEY);
     my $cipherPayload = decode_base64($encryptedPassword);
-    my $cipher = new Crypt::CBC(
+
+    if (length($cipherPayload) < 8)
     {
-      key => $key,
-      cipher => 'Crypt::DES_EDE3',
-      regenerate_key => 0,
-    });
-    $tokenValue = $cipher->decrypt('RandomIV' . $cipherPayload);
+      throw Gold::Exception("445", "The encrypted password is missing 8 bytes of salt and cannot be used.");
+    }
+
+    if ( $Crypt::CBC::VERSION >= 3.0 ) {
+      my $iv = substr($cipherPayload, 0, 8);
+      my $encrypted_tokenValue = substr($cipherPayload, 8);
+      my $cipher = Crypt::CBC->new(
+        -key     => $key,
+        -cipher  => 'Crypt::DES_EDE3',
+        -pbkdf   => 'none',
+        -header  => 'none',
+        -iv      => $iv,
+        -padding => 'standard',
+      );
+      $tokenValue = $cipher->decrypt($encrypted_tokenValue);
+    } else {
+      my $cipher = new Crypt::CBC({
+        key => $key,
+        cipher => 'Crypt::DES_EDE3',
+        regenerate_key => 0,
+      });
+      $tokenValue = $cipher->decrypt('RandomIV' . $cipherPayload);
+    }
   }
 
   # Unknown Token Type
@@ -661,17 +680,30 @@ sub encrypt
   my $seed = pack("a24", md5_hex($$.time().int(rand(10000))));
   my $key = pack("a24", $tokenValue);
   my $time = pack("a24", time());
-  my $cipher = new Crypt::CBC(
-  {
-    key => $key,                  # Must be at least 24 bytes
-    cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-    regenerate_key => 0,          # Regenerate uses MD5 hash
-    padding => 'null',            # No padding
-    prepend_iv => 0,              # Does not prepend IV
-  });
-  my $encryptedTime = $cipher->encrypt($time);
-  my $sessionKey = $cipher->encrypt($encryptedTime ^ $seed);
-
+  my $sessionKey;
+  if ( $Crypt::CBC::VERSION >= 3.0 ) {
+    my $cipher = Crypt::CBC->new(
+      -key     => $key,
+      -cipher  => 'Crypt::DES_EDE3',
+      -pbkdf   => 'none',
+      -padding => 'none',
+      -header  => 'none',
+      -iv      => Crypt::CBC->random_bytes(8),
+    );
+    my $encryptedTime = $cipher->encrypt($time);
+    $sessionKey = $cipher->encrypt($encryptedTime ^ $seed);
+  } else {
+    my $cipher = new Crypt::CBC({
+      key => $key,                  # Must be at least 24 bytes
+      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+      regenerate_key => 0,          # Regenerate uses MD5 hash
+      padding => 'null',            # No padding
+      prepend_iv => 0,              # Does not prepend IV
+    });
+    my $encryptedTime = $cipher->encrypt($time);
+    $sessionKey = $cipher->encrypt($encryptedTime ^ $seed);
+  }
+  
   # Step 3) Encrypt the signature and body with the session key
 
   # Build the plaintext
@@ -699,18 +731,31 @@ sub encrypt
   # Compress the plaintext
   my $compressedData = Compress::Zlib::memGzip($plainText) ;
 
-  # Initialize the cipher
-  $cipher = new Crypt::CBC(
-  {
-    key => $sessionKey,                  # Must be at least 24 bytes
-    cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-    regenerate_key => 0,          # Regenerate uses MD5 hash
-    padding => 'standard',        # PKCS#5
-    prepend_iv => 1,              # Prepends RandomIV.{8}
-  });
+  # Encrypt the payload
+  my $cipherPayload;
+  if ( $Crypt::CBC::VERSION >= 3.0 ) {
+    my $iv = Crypt::CBC->random_bytes(8);
+    my $cipher = Crypt::CBC->new(
+      -key     => $sessionKey,
+      -cipher  => 'Crypt::DES_EDE3',
+      -pbkdf   => 'none',
+      -padding => 'standard',
+      -header  => 'none',
+      -iv      => $iv,
+    );
+    $cipherPayload = $iv . $cipher->encrypt($compressedData);
+  } else {
+    my $cipher = new Crypt::CBC({
+      key => $sessionKey,                  # Must be at least 24 bytes
+      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+      regenerate_key => 0,          # Regenerate uses MD5 hash
+      padding => 'standard',        # PKCS#5
+      prepend_iv => 1,              # Prepends RandomIV.{8}
+    });
+    $cipherPayload = substr($cipher->encrypt($compressedData), 8); # Remove 'RandomIV'
+  }
 
-  # Encrypt and encode the CipherValue payload
-  my $cipherPayload = substr($cipher->encrypt($compressedData), 8); # Remove 'RandomIV'
+  # Encode the encrypted payload
   my $cipherText = encode_base64($cipherPayload, "");
   if ($log->is_debug())
   {
@@ -729,31 +774,56 @@ sub encrypt
   
   # Encrypt WKCKS in CBC mode using KEK as the key and IV as iv -> TEMP1
   # Let TEMP2 = IV || TEMP1
-  $cipher = new Crypt::CBC(
-  {
-    key => $key,                  # Must be at least 24 bytes
-    cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-    regenerate_key => 0,          # Regenerate uses MD5 hash
-    padding => 'null',            # No padding
-    prepend_iv => 1,              # Prepends RandomIV.{8}
-  });
-  my $temp2 = substr($cipher->encrypt($wkcks), 8); # Remove 'RandomIV'
+  my $temp2;
+  if ( $Crypt::CBC::VERSION >= 3.0 ) {
+    my $iv = Crypt::CBC->random_bytes(8);
+    my $cipher = Crypt::CBC->new(
+      -key     => $key,
+      -cipher  => 'Crypt::DES_EDE3',
+      -pbkdf   => 'none',
+      -padding => 'none',
+      -header  => 'none',
+      -iv      => $iv,
+    );
+    $temp2 = $iv . $cipher->encrypt($wkcks);
+  } else {
+    my $cipher = new Crypt::CBC({
+      key => $key,                  # Must be at least 24 bytes
+      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+      regenerate_key => 0,          # Regenerate uses MD5 hash
+      padding => 'null',            # No padding
+      prepend_iv => 1,              # Prepends RandomIV.{8}
+    });
+    $temp2 = substr($cipher->encrypt($wkcks), 8); # Remove 'RandomIV'
+  }
 
   # Reverse the order of the octets in TEMP2 and call the result TEMP3
   my $temp3 = reverse $temp2;
 
   # Encrypt TEMP3 in CBC mode using the KEK and an IV of 0x4adda22c79e82105
   my $funkyIv = pack("C8", 0x4a, 0xdd, 0xa2, 0x2c, 0x79, 0xe8, 0x21, 0x05);
-  $cipher = new Crypt::CBC(
-  {
-    key => $key,                  # Must be at least 24 bytes
-    cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-    iv => $funkyIv,               # IV of 0x4adda22c79e82105
-    regenerate_key => 0,          # Regenerate uses MD5 hash
-    padding => 'null',            # No padding
-    prepend_iv => 0,              # Does not prepend IV
-  });
-  my $ek = $cipher->encrypt($temp3);
+  my $ek;
+  if ( $Crypt::CBC::VERSION >= 3.0 ) {
+    my $cipher = Crypt::CBC->new(
+      -key     => $key,
+      -cipher  => 'Crypt::DES_EDE3',
+      -iv      => $funkyIv,
+      -pbkdf   => 'none',
+      -padding => 'none',
+      -header  => 'none',
+    );
+    $ek = $cipher->encrypt($temp3);
+  } else {
+    my $cipher = new Crypt::CBC({
+      key => $key,                  # Must be at least 24 bytes
+      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+      iv => $funkyIv,               # IV of 0x4adda22c79e82105
+      regenerate_key => 0,          # Regenerate uses MD5 hash
+      padding => 'null',            # No padding
+      prepend_iv => 0,              # Does not prepend IV
+    });
+    $ek = $cipher->encrypt($temp3);
+  }
   my $wrappedText = encode_base64($ek, "");
   if ($log->is_debug())
   {
@@ -872,17 +942,34 @@ sub decrypt
     {
       throw Gold::Exception("444", "No password defined for $tokenName");
     }
+    if (length($cipherPayload) < 8)
+    {
+      throw Gold::Exception("445", "The encrypted password is missing 8 bytes of salt and cannot be used.");
+    }
 
     # Decrypt password with auth key
     my $key = pack("a24", $AUTH_KEY);
     my $cipherPayload = decode_base64($encryptedPassword);
-    my $cipher = new Crypt::CBC(
-    {
-      key => $key,
-      cipher => 'Crypt::DES_EDE3',
-      regenerate_key => 0,
-    });
-    $tokenValue = $cipher->decrypt('RandomIV' . $cipherPayload);
+    if ( $Crypt::CBC::VERSION >= 3.0 ) {
+      my $iv = substr($cipherPayload, 0, 8);
+      my $encrypted_tokenValue = substr($cipherPayload, 8);
+      my $cipher = Crypt::CBC->new(
+        -key     => $key,
+        -cipher  => 'Crypt::DES_EDE3',
+        -pbkdf   => 'none',
+        -header  => 'none',
+        -iv      => $iv,
+        -padding => 'standard',
+      );
+      $tokenValue = $cipher->decrypt($encrypted_tokenValue);
+    } else {
+      my $cipher = new Crypt::CBC({
+        key => $key,
+        cipher => 'Crypt::DES_EDE3',
+        regenerate_key => 0,
+      });
+      $tokenValue = $cipher->decrypt('RandomIV' . $cipherPayload);
+    }
   }
 
   # Unknown Token Type
@@ -912,31 +999,57 @@ sub decrypt
 
   # Decrypt text with 3DES in CBC mode using KEK and IV as 0x4adda22c79e82105
   my $funkyIv = pack("C8", 0x4a, 0xdd, 0xa2, 0x2c, 0x79, 0xe8, 0x21, 0x05);
-  my $cipher = new Crypt::CBC(
-  {
-    key => $key,                  # Must be at least 24 bytes
-    cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-    iv => $funkyIv,               # IV of 0x4adda22c79e82105
-    regenerate_key => 0,          # Regenerate uses MD5 hash
-    padding => 'null',            # No padding
-    prepend_iv => 0,              # Does not prepend IV
-  });
-  my $temp3 = $cipher->decrypt($ek);
+  my $temp3;
+  if ( $Crypt::CBC::VERSION >= 3.0 ) {
+    my $cipher = Crypt::CBC->new(
+      -key     => $key,
+      -cipher  => 'Crypt::DES_EDE3',
+      -iv      => $funkyIv,
+      -pbkdf   => 'none',
+      -padding => 'none',
+      -header  => 'none',
+    );
+    $temp3 = $cipher->decrypt($ek);
+  } else {
+    my $cipher = new Crypt::CBC({
+      key => $key,                  # Must be at least 24 bytes
+      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+      iv => $funkyIv,               # IV of 0x4adda22c79e82105
+      regenerate_key => 0,          # Regenerate uses MD5 hash
+      padding => 'null',            # No padding
+      prepend_iv => 0,              # Does not prepend IV
+    });
+    $temp3 = $cipher->decrypt($ek);
+  }
 
   # Reverse the order of the octets in TEMP3 and call the result TEMP2
   my $temp2 = reverse $temp3;
 
   # Decompose TEMP2 into IV, the first 8 octets, and TEMP1
   # Decrypt TEMP1 using 3DES in CBC mode using KEK and the IV -> WKCKS
-  $cipher = new Crypt::CBC(
-  {
-    key => $key,                  # Must be at least 24 bytes
-    cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-    regenerate_key => 0,          # Regenerate uses MD5 hash
-    padding => 'null',            # No padding
-    prepend_iv => 1,              # Prepends RandomIV.{8}
-  });
-  my $wkcks = $cipher->decrypt('RandomIV' . $temp2);
+  my $wkcks;
+  if ( $Crypt::CBC::VERSION >= 3.0 ) {
+    my $iv = substr($temp2, 0, 8);
+    my $encrypted_wkcks = substr($temp2, 8);
+    my $cipher = Crypt::CBC->new(
+      -key     => $key,
+      -cipher  => 'Crypt::DES_EDE3',
+      -pbkdf   => 'none',
+      -padding => 'none',
+      -header  => 'none',
+      -iv      => $iv,
+    );
+    $wkcks = $cipher->decrypt($encrypted_wkcks);
+  } else {
+    my $cipher = new Crypt::CBC({
+      key => $key,                  # Must be at least 24 bytes
+      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+      regenerate_key => 0,          # Regenerate uses MD5 hash
+      padding => 'null',            # No padding
+      prepend_iv => 1,              # Prepends RandomIV.{8}
+    });
+    $wkcks = $cipher->decrypt('RandomIV' . $temp2);
+  }
 
   # Decompose WKCKS. CKS is the last 8 octets and WK are those preceding it
   my $wk = substr($wkcks, 0, 24);
@@ -961,15 +1074,29 @@ sub decrypt
 
   # Recover the IV and the compressed data
   my $cipherPayload = decode_base64($cipherText);
-  $cipher = new Crypt::CBC(
-  {
-    key => $wk,                  # Must be at least 24 bytes
-    cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-    regenerate_key => 0,          # Regenerate uses MD5 hash
-    padding => 'standard',        # PKCS#5
-    prepend_iv => 1,              # Prepends RandomIV.{8}
-  });
-  my $compressedData = $cipher->decrypt('RandomIV' . $cipherPayload);
+  my $compressedData;
+  if ( $Crypt::CBC::VERSION >= 3.0 ) {
+    my $iv = substr($cipherPayload, 0, 8);
+    my $encrypted_compressedData = substr($cipherPayload, 8);
+    my $cipher = Crypt::CBC->new(
+      -key     => $wk,
+      -cipher  => 'Crypt::DES_EDE3',
+      -pbkdf   => 'none',
+      -padding => 'standard',
+      -header  => 'none',
+      -iv      => $iv,
+    );
+    $compressedData = $cipher->decrypt($encrypted_compressedData);
+  } else {
+    my $cipher = new Crypt::CBC({
+      key => $wk,                  # Must be at least 24 bytes
+      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+      regenerate_key => 0,          # Regenerate uses MD5 hash
+      padding => 'standard',        # PKCS#5
+      prepend_iv => 1,              # Prepends RandomIV.{8}
+    });
+    $compressedData = $cipher->decrypt('RandomIV' . $cipherPayload);
+  }
   my $plainText = Compress::Zlib::memGunzip($compressedData) ;
 
   # Step 5) Replace encrypted data with envelope contents

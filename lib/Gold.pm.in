@@ -136,6 +136,7 @@ BEGIN {
   # Read in and set AUTH_KEY
   open AUTH_KEY, "${PREFIX}/etc/auth_key" or throw Gold::Exception("Unable to open auth_key file: $!");
   chomp($AUTH_KEY = <AUTH_KEY>);
+  if ($AUTH_KEY =~ /^([\s\S]*)$/) { $AUTH_KEY = $1; }  # untaint AUTH_KEY
 }
 
 1;

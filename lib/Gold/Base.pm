@@ -381,15 +381,28 @@ sub create
     {
       return new Gold::Response()->failure("740", "The password must be at least 8 characters");
     }
-    my $cipher = new Crypt::CBC(
-    {
-      key => $key,
-      cipher => 'Crypt::DES_EDE3',
-      regenerate_key => 0,
-      padding => 'standard',
-      prepend_iv => 1,
-    });
-    my $cipherPayload = substr($cipher->encrypt($password), 8); # Remove 'RandomIV'
+    my $cipherPayload;
+    if ( $Crypt::CBC::VERSION >= 3.0 ) {
+      my $iv = Crypt::CBC->random_bytes(8);
+      my $cipher = Crypt::CBC->new(
+        -key        => $key,
+        -cipher     => 'Crypt::DES_EDE3',
+        -pbkdf      => 'none',
+        -header     => 'none',
+        -iv         => $iv,
+        -padding    => 'standard',
+      );
+      $cipherPayload = $iv . $cipher->encrypt($password);
+    } else {
+      my $cipher = new Crypt::CBC({
+        key => $key,
+        cipher => 'Crypt::DES_EDE3',
+        regenerate_key => 0,
+        padding => 'standard',
+        prepend_iv => 1,
+      });
+      $cipherPayload = substr($cipher->encrypt($password), 8); # Remove 'RandomIV'
+    }
     my $encryptedPassword = encode_base64($cipherPayload, "");
     $assignments{"Password"} = new Gold::Assignment(name => "Password", value => $encryptedPassword);
   }
@@ -507,15 +520,28 @@ sub modify
     {
       return new Gold::Response()->failure("740", "The password must be at least 8 characters");
     }
-    my $cipher = new Crypt::CBC(
-    {
-      key => $key,                  # Must be at least 24 bytes
-      cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
-      regenerate_key => 0,          # Regenerate uses MD5 hash
-      padding => 'standard',        # PKCS#5
-      prepend_iv => 1,              # Prepends RandomIV.{8}
-    });
-    my $cipherPayload = substr($cipher->encrypt($password), 8); # Remove 'RandomIV'
+    my $cipherPayload;
+    if ( $Crypt::CBC::VERSION >= 3.0 ) {
+      my $iv = Crypt::CBC->random_bytes(8);
+      my $cipher = Crypt::CBC->new(
+        -key        => $key,
+        -cipher     => 'Crypt::DES_EDE3',
+        -pbkdf      => 'none',
+        -header     => 'none',
+        -iv         => $iv,
+        -padding    => 'standard',
+      );
+      $cipherPayload = $iv . $cipher->encrypt($password);
+    } else {
+      my $cipher = new Crypt::CBC({
+        key => $key,                  # Must be at least 24 bytes
+        cipher => 'Crypt::DES_EDE3',  # Triple DES (CBC)
+        regenerate_key => 0,          # Regenerate uses MD5 hash
+        padding => 'standard',        # PKCS#5
+        prepend_iv => 1,              # Prepends RandomIV.{8}
+      });
+      $cipherPayload = substr($cipher->encrypt($password), 8); # Remove 'RandomIV'
+    }
     my $encryptedPassword = encode_base64($cipherPayload, "");
     $assignments{"Password"} = new Gold::Assignment(name => "Password", value => $encryptedPassword);
   }

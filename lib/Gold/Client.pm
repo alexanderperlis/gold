@@ -126,6 +126,7 @@ sub authenticate
     # Otherwise use the auth_key for symmetric security
     #open AUTH_KEY, "${GOLD_HOME}/etc/auth_key" or throw Gold::Exception("422", "Unable to open auth_key file: $!");
     #chomp($token = <AUTH_KEY>);
+    #if ($AUTH_KEY =~ /^([\s\S]*)$/) { $AUTH_KEY = $1; }  # untaint AUTH_KEY
   }
 }
 
