@@ -39,7 +39,7 @@ Prerequisites:
   - dnf config-manager --set-enabled crb  # if no `crb`, try `powertools` or `codeready-builder`
   - dnf install epel-release
   - dnf install make perl perl-App-cpanminus perl-LWP-Protocol-https gcc-c++
-  - dnf install perl-DBI perl-Digest-HMAC perl-Date-Manip perl-Params-Validate perl-Log-Log4perl perl-Log-Dispatch-FileRotate perl-XML-NamespaceSupport perl-XML-SAX perl-XML-LibXML perl-Crypt-DES perl-Crypt-DES_EDE3 perl-Crypt-CBC
+  - dnf install perl-DBI perl-Digest-HMAC perl-Date-Manip perl-Params-Validate perl-Log-Log4perl perl-Log-Dispatch-FileRotate perl-XML-NamespaceSupport perl-XML-SAX perl-XML-LibXML perl-Crypt-DES perl-Crypt-DES_EDE3 perl-Crypt-CBC perl-Term-ReadLine-Gnu
   - dnf install perl-DBD-Pg perl-DBD-MySQL perl-DBD-SQLite  # Choose at least one of these.
   - cpanm Data::Properties CGI::Session
   - dnf install docbook-utils docbook-utils-pdf  # optional, needed for `make doc`
