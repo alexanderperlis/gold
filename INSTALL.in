@@ -43,7 +43,7 @@ Prerequisites:
   - dnf install perl-DBD-Pg perl-DBD-MySQL perl-DBD-SQLite  # Choose at least one of these.
   - cpanm Data::Properties CGI::Session
   - dnf install docbook-utils docbook-utils-pdf  # optional, needed for `make doc`
-  - dns install readline  # optional, used by `goldsh`
+  - dnf install readline  # optional, used by `goldsh`
 
 - Notes:
   - Unless you are using SQLite, you will need to install or have access to a PostgreSQL or MySQL/MariaDB instance.

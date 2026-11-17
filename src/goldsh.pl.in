@@ -126,7 +126,10 @@ Main:
   {
     # Use Gnu Readline if reading from terminal
     $prompt = 1;
-    $term = 'Term::ReadLine'->new('gold', *STDIN, *STDOUT);
+    {
+      local $ENV{PATH} = '@prefix@/bin:/bin:/usr/bin'; # Untaint PATH
+      $term = 'Term::ReadLine'->new('gold', *STDIN, *STDOUT);
+    }
     $term->ornaments('md,me,,'); # Bold the prompt
     if (-t && $term->ReadLine eq "Term::ReadLine::Gnu")
     {

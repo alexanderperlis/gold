@@ -942,14 +942,14 @@ sub decrypt
     {
       throw Gold::Exception("444", "No password defined for $tokenName");
     }
-    if (length($cipherPayload) < 8)
-    {
-      throw Gold::Exception("445", "The encrypted password is missing 8 bytes of salt and cannot be used.");
-    }
 
     # Decrypt password with auth key
     my $key = pack("a24", $AUTH_KEY);
     my $cipherPayload = decode_base64($encryptedPassword);
+    if (length($cipherPayload) < 8)
+    {
+      throw Gold::Exception("445", "The encrypted password is missing 8 bytes of salt and cannot be used.");
+    }
     if ( $Crypt::CBC::VERSION >= 3.0 ) {
       my $iv = substr($cipherPayload, 0, 8);
       my $encrypted_tokenValue = substr($cipherPayload, 8);

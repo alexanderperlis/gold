@@ -165,7 +165,7 @@ REQUIREMENTS
   Software Name and Version         Where to Obtain                  Necessity
   --------------------------------- -------------------------------- ---------
   a tested Database (Postgres 7.2+) ftp://ftp.postgresql.org/pub/    Required
-  Perl 5.6.1 or higher w/ suidperl  http://www.perl.com/             Required
+  Perl 5.6.1 or higher              http://www.perl.com/             Required
   LibXML2 (2.4.25 or higher)        http://www.xmlsoft.org/          Required
   Gnu ReadLine (2.0 or higher)      ftp://ftp.gnu.org/gnu            Optional
   Java 2 SDK, Standard Edition 1.4  http://java.sun.com/j2se         Optional
@@ -180,7 +180,8 @@ INSTALLATION
   1)  Prepare to build and install Gold by unpacking the archive and creating
       an appropriate user to manage Gold.
 
-  2)  Install the prerequisites. These include Perl 5.6 (with suidperl), libxml2      and PostgreSQL 7. Java 2 SDK 1.4 and the Apache Tomcat server are needed
+  2)  Install the prerequisites. These include Perl 5.6, libxml2
+      and PostgreSQL 7. Java 2 SDK 1.4 and the Apache Tomcat server are needed
       if you want to use the web GUI. Gnu readline is optional.
 
   3)  Perform pre-install configurations by running the "configure" script.
